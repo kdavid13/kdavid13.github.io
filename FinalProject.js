@@ -1,7 +1,6 @@
-var sketchProc=function(processingInstance){ with (processingInstance){
-size(400, 400);
+var sketchProc=function(processingInstance){ with (processingInstance){ size(400, 400);
 frameRate(60);
-
+var toRads = TWO_PI/360;
 ////////////////////////////////////////
 // Name: Andrew Repp and David Kusterer
 // Date: 11 - 4 - 2016
@@ -230,6 +229,123 @@ mainMenu_state.prototype.display = function(me){
   text("WARRIORS", 45, 125);
 };
 
+/************************************************/
+/*               Spaceship Object               */
+/************************************************/
+var spaceshipObj = function(x, y, type) {
+    this.x = x;
+    this.y = y;
+    this.type = type; 
+    this.speed = 1;
+    this.armor = 1;
+    this.weapon = 1;
+};
+
+spaceshipObj.prototype.draw = function() {
+    pushMatrix();
+    translate(this.x, this.y);
+    rotate(this.angle);
+    stroke(0, 0, 0);
+    if (this.type === 1) { //Draw basic ship
+        strokeWeight(2);
+        //line(0, -40, 0, 0);
+        fill(173, 151, 151);
+        quad(5, 5, 15, 20, 15, 40, 5, 20); //Right fin
+        quad(-5, 5, -15, 20, -15, 40, -5, 20); //Left fin
+        fill(161, 88, 88);
+        beginShape(); //BEGIN - body
+            arc(0, 0, 13, 50, -41 * toRads, 221 * toRads);
+            vertex(0, -35);
+            vertex(5, -17);
+        endShape(); //END - body
+        fill(255, 222, 222);
+        ellipse(0, -10, 4,4);
+    } else if (this.type === 2) { //Draw upgraded ship
+        strokeWeight(2);
+        fill(133, 132, 173); //COLOR - blue
+        quad(5, -17, 15, 20, 15, 40, 5, 20); //Right fin
+        quad(-5, -17, -15, 20, -15, 40, -5, 20); //Left fin
+        strokeWeight(1);
+        //line(15, 3, 15, 30);
+        //line(-15, 3, -15, 30);
+        strokeWeight(2);
+        beginShape(); //BEGIN - body
+            arc(0, 0, 13, 50, -41 * toRads, 221 * toRads);
+            vertex(0, -35);
+            vertex(5, -17);
+        endShape(); //END - body
+        fill(47, 196, 196); //light blue
+        arc(0, -14, 9, 10, 0 * toRads, 180 * toRads);
+    } else if (this.type === 3) { //Draw ultimate ship
+        strokeWeight(2);
+        fill(37, 217, 49); //COLOR - red
+        //triangle(42, -17, 180, 29, 29, 11);
+        quad(5, -17, 15, 20, 15, 40, 5, 20); //Right fin
+        quad(15, 20, 15, 40, 16, 42, 43, -5);
+        quad(-5, -17, -15, 20, -15, 40, -5, 20); //Left fin
+        quad(-15, 20, -15, 40, -16, 42, -43, -5);
+       
+        beginShape(); //BEGIN - body
+            arc(0, 0, 13, 50, -41 * toRads, 221 * toRads);
+            vertex(0, -35);
+            vertex(5, -17);
+        endShape(); //END - body
+        fill(70, 168, 168);
+        arc(0, -14, 9, 10, 0 * toRads, 180 * toRads);
+    }
+    popMatrix();
+};
+
+/************************************************/
+/*               Alien Object                   */
+/************************************************/
+var alienObj = function(x, y, type) {
+    this.x = x;
+    this.y = y;
+    this.type = type; 
+    this.speed = 1;
+    this.armor = 1;
+    this.weapon = 1;
+};
+alienObj.prototype.draw = function() {
+    pushMatrix();
+    translate(this.x, this.y);
+    rotate(this.angle);
+    
+    if (this.type === 1) { //Draw basic ship
+        fill(120, 120, 120);
+        beginShape();
+            vertex(8, -20);
+            vertex(20, -35);
+            vertex(20, -5);
+            vertex(8, 20);
+            vertex(8, 0);
+            vertex(0, 17);
+            vertex(-8, 0);
+            vertex(-8, 20);
+            vertex(-20, -5);
+            vertex(-20, -35);
+            vertex(-8, -20);
+            vertex(0, -16);
+            vertex(8, -20);
+        endShape();
+        
+        strokeWeight(1);
+        fill(184, 99, 201);
+        triangle(-17,-28,-9, 12, -17, -6);
+        triangle(17,-28,9, 12, 17, -6);
+         triangle(8,-13,-8, -13, 0, 6);
+        //arc(73, 42, 16, 5, 180*toRads, 0);
+        strokeWeight(2);
+        
+    } else if (this.type === 2) { //Draw basic ship
+    
+    } else if (this.type === 3) { //Draw basic ship
+    
+    }
+    popMatrix();
+};
+
 
 /************************************************/
 /*                Play State = 1                */
@@ -252,7 +368,14 @@ play_state.prototype.checkState = function(me){
 play_state.prototype.display = function(me){
   this.bg.display();
   // TODO: Draw new game
-
+        var ships = [new spaceshipObj(50, 50, 1), new spaceshipObj(150, 50, 2), new spaceshipObj(250, 50, 3)];
+    for (var i = 0; i < ships.length; i++) {
+        ships[i].draw();
+    }
+    var aliens = [new alienObj(50, 150, 1), new alienObj(150, 150, 2), new alienObj(250, 150, 3)];
+    for (var i = 0; i < aliens.length; i++) {
+        aliens[i].draw();
+    }
   // PLACEHOLDER:
   textSize(15);
   text("New game to be displayed here.", 100, 200);
