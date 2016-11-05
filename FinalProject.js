@@ -3,7 +3,7 @@ size(400, 400);
 frameRate(60);
 
 ////////////////////////////////////////
-// Name: David Kusterer
+// Name: Andrew Repp and David Kusterer
 // Date: 11 - 4 - 2016
 // Assn: Milestone 1 for Final Project
 // Description:
@@ -314,13 +314,31 @@ diff_state.prototype.display = function(me){
 
 
 /************************************************/
+/*             Quit State = 4                   */
+/************************************************/
+
+
+var quit_state = function(){};
+
+quit_state.prototype.update = function(me){};
+
+quit_state.prototype.checkState = function(me){};
+
+quit_state.prototype.display = function(me){
+  fill(255, 255, 255);
+  noStroke();
+  rect(0, 0, 400, 400);
+};
+
+
+/************************************************/
 /*             Game Shell Object                */
 /************************************************/
 
 
 var gameShellObj = function(){
   this.state = [new mainMenu_state(), new play_state(), new instr_state(),
-                new diff_state()];
+                new diff_state(), new quit_state()];
   this.currState = 0;
 
   this.difficulty = "medium";
