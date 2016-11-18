@@ -9,11 +9,11 @@ var toRads = TWO_PI/360;
 ////////////////////////////////////////
 
 /************************************************/
-/*             Background Object                */
+/*          Menu Background Object              */
 /************************************************/
 
 
-var backgroundObj = function(){
+var menuBackgroundObj = function(){
   this.stars = [];
   this.square = 23;
   for(var i = 0; i < this.square; i++){
@@ -24,7 +24,7 @@ var backgroundObj = function(){
   }
 };
 
-backgroundObj.prototype.display = function(){
+menuBackgroundObj.prototype.display = function(){
   noStroke();
   // Black background
   fill(0, 0, 0);
@@ -203,7 +203,7 @@ diffMenuObj.prototype.display = function(currDiff){
 
 
 var mainMenu_state = function(){
-  this.bg = new backgroundObj();
+  this.bg = new menuBackgroundObj();
   this.menu = new mainMenuObj();
 };
 
@@ -229,21 +229,96 @@ mainMenu_state.prototype.display = function(me){
   text("WARRIORS", 45, 125);
 };
 
+
+/************************************************/
+/*          Game Background Object              */
+/************************************************/
+
+var MAP_SPEED = 1;
+
+var gameBackgroundObj = function(){
+  this.stars = [];
+  this.square = 20;
+  for(var i = 0; i < this.square; i++){
+    for(var j = 0; j < this.square; j++){
+      // Place stars every 20 (give or take 5) pixels
+      this.stars.push(new PVector(i * 20 + random(-5, 5), j * 20 + random(-5, 5)));
+    }
+  }
+};
+
+gameBackgroundObj.prototype.update = function(){
+    for(var i = 0; i < this.square * this.square; i++){
+        this.stars[i].y += MAP_SPEED;
+        if (this.stars[i].y > 400){
+            this.stars[i].y -= 400;
+        }
+    }
+};
+
+gameBackgroundObj.prototype.display = function(){
+  noStroke();
+  // Black background
+  fill(0, 0, 0);
+  rect(0, 0, 400, 400);
+
+  // Stars
+  fill(255, 255, 255);
+
+  for(var i = 0; i < this.square * this.square; i++){
+    ellipse(this.stars[i].x, this.stars[i].y, 2, 2);
+  }
+};
+
+
 /************************************************/
 /*               Spaceship Object               */
 /************************************************/
 var spaceshipObj = function(x, y, type) {
-    this.x = x;
-    this.y = y;
-    this.type = type; 
+    this.pos = new PVector(x, y);
+    this.vel = new PVector(0, 0);
+    this.acc = new PVector(0, 0);
+
+    this.mass = 5;
+    this.width = 35;
+    this.height = 35;
+
+    this.type = type;
     this.speed = 1;
     this.armor = 1;
     this.weapon = 1;
 };
 
+spaceshipObj.prototype.applyForce = function(force) {
+    var f = PVector.div(force, this.mass);
+    this.acc.add(f);
+};
+
+spaceshipObj.prototype.update = function() {
+    var spaceFriction = PVector.mult(this.vel, -0.25);
+    this.applyForce(spaceFriction);
+    this.vel.add(this.acc);
+
+    // Keep the ship within the bounds of the canvas
+    if (this.pos.x < (this.width / 2) && this.vel.x < 0){
+      this.vel.x = 0;
+    } else if (this.pos.x > 400 - (this.width / 2) && this.vel.x > 0){
+      this.vel.x = 0;
+    }
+    if (this.pos.y < (this.height / 2) && this.vel.y < 0){
+      this.vel.y = 0;
+    } else if (this.pos.y > 400 - (this.height / 2) && this.vel.y > 0){
+      this.vel.y = 0;
+    }
+
+    this.pos.add(this.vel);
+
+    this.acc.set(0, 0);
+};
+
 spaceshipObj.prototype.draw = function() {
     pushMatrix();
-    translate(this.x, this.y);
+    translate(this.pos.x, this.pos.y);
     rotate(this.angle);
     stroke(0, 0, 0);
     if (this.type === 1) { //Draw basic ship
@@ -284,7 +359,7 @@ spaceshipObj.prototype.draw = function() {
         quad(15, 20, 15, 40, 16, 42, 43, -5);
         quad(-5, -17, -15, 20, -15, 40, -5, 20); //Left fin
         quad(-15, 20, -15, 40, -16, 42, -43, -5);
-       
+
         beginShape(); //BEGIN - body
             arc(0, 0, 13, 50, -41 * toRads, 221 * toRads);
             vertex(0, -35);
@@ -296,13 +371,17 @@ spaceshipObj.prototype.draw = function() {
     popMatrix();
 };
 
+spaceshipObj.prototype.display = function() {
+  this.draw();
+};
+
 /************************************************/
 /*               Alien Object                   */
 /************************************************/
 var alienObj = function(x, y, type) {
     this.x = x;
     this.y = y;
-    this.type = type; 
+    this.type = type;
     this.speed = 1;
     this.armor = 1;
     this.weapon = 1;
@@ -311,7 +390,7 @@ alienObj.prototype.draw = function() {
     pushMatrix();
     translate(this.x, this.y);
     rotate(this.angle);
-    
+
     if (this.type === 1) { //Draw basic ship
         fill(120, 120, 120);
         beginShape();
@@ -329,7 +408,7 @@ alienObj.prototype.draw = function() {
             vertex(0, -16);
             vertex(8, -20);
         endShape();
-        
+
         strokeWeight(1);
         fill(184, 99, 201);
         triangle(-17,-28,-9, 12, -17, -6);
@@ -337,11 +416,11 @@ alienObj.prototype.draw = function() {
          triangle(8,-13,-8, -13, 0, 6);
         //arc(73, 42, 16, 5, 180*toRads, 0);
         strokeWeight(2);
-        
+
     } else if (this.type === 2) { //Draw basic ship
-    
+
     } else if (this.type === 3) { //Draw basic ship
-    
+
     }
     popMatrix();
 };
@@ -353,12 +432,14 @@ alienObj.prototype.draw = function() {
 
 
 var play_state = function(){
-  this.bg = new backgroundObj();
-  // TODO: Declare other new game variables / etc.
+  this.bg = new gameBackgroundObj();
+  this.player = new spaceshipObj(200, 350, 1);
 };
 
 play_state.prototype.update = function(me){
   // TODO: Move things around / check collisions / etc.
+  this.bg.update();
+  this.player.update();
 };
 
 play_state.prototype.checkState = function(me){
@@ -367,18 +448,7 @@ play_state.prototype.checkState = function(me){
 
 play_state.prototype.display = function(me){
   this.bg.display();
-  // TODO: Draw new game
-        var ships = [new spaceshipObj(50, 50, 1), new spaceshipObj(150, 50, 2), new spaceshipObj(250, 50, 3)];
-    for (var i = 0; i < ships.length; i++) {
-        ships[i].draw();
-    }
-    var aliens = [new alienObj(50, 150, 1), new alienObj(150, 150, 2), new alienObj(250, 150, 3)];
-    for (var i = 0; i < aliens.length; i++) {
-        aliens[i].draw();
-    }
-  // PLACEHOLDER:
-  textSize(15);
-  text("New game to be displayed here.", 100, 200);
+  this.player.display();
 };
 
 
@@ -388,7 +458,7 @@ play_state.prototype.display = function(me){
 
 
 var instr_state = function(){
-  this.bg = new backgroundObj();
+  this.bg = new menuBackgroundObj();
   this.menu = new navMenuObj();
 };
 
@@ -417,7 +487,7 @@ instr_state.prototype.display = function(me){
 
 
 var diff_state = function(){
-  this.bg = new backgroundObj();
+  this.bg = new menuBackgroundObj();
   this.navMenu = new navMenuObj();
   this.diffMenu = new diffMenuObj();
 };
@@ -488,6 +558,30 @@ var draw = function() {
 
 var mouseClicked = function() {
   shell.state[shell.currState].checkState(shell);
+};
+
+var VERT_THRUST_FORCE = 2.5;
+var HORIZ_THRUST_FORCE = 2;
+
+var keyPressed = function() {
+  if(shell.currState === 1){
+    switch(keyCode) {
+      case 87: //user pressed w key
+        shell.state[1].player.applyForce(new PVector(0, -VERT_THRUST_FORCE));
+        break;
+      case 65:
+        shell.state[1].player.applyForce(new PVector(-HORIZ_THRUST_FORCE, 0));
+        break;
+      case 83:
+        shell.state[1].player.applyForce(new PVector(0, VERT_THRUST_FORCE));
+        break;
+      case 68:
+        shell.state[1].player.applyForce(new PVector(HORIZ_THRUST_FORCE, 0));
+        break;
+      default:
+        break;
+    }
+  }
 };
 
 
