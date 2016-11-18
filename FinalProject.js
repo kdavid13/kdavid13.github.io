@@ -330,9 +330,11 @@ spaceshipObj.prototype.applyForce = function(force) {
 };
 
 spaceshipObj.prototype.update = function() {
+    // Make it so the ship will come to a stop if no keys are being pressed
     var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
 
+    // If W, A, S, or D is being pressed, move the ship accordingly
     if(keysDown[wKey]){
       this.applyForce(new PVector(0, -this.speed));
     }
@@ -346,6 +348,7 @@ spaceshipObj.prototype.update = function() {
       this.applyForce(new PVector(0, this.speed));
     }
 
+    // Add the current acceleration to the velocity
     this.vel.add(this.acc);
 
     // Keep the ship within the bounds of the canvas
@@ -360,8 +363,10 @@ spaceshipObj.prototype.update = function() {
       this.vel.y = 0;
     }
 
+    // Add the current velocity to the position
     this.pos.add(this.vel);
 
+    // Reset the current acceleration
     this.acc.set(0, 0);
 };
 
@@ -517,35 +522,39 @@ play_state.prototype.checkCollision = function(obj, x, y){
 };
 
 play_state.prototype.update = function(me){
-  if(this.laserTimer > 0){
-    this.laserTimer--;
-  }
-
-  // TODO: Move things around / check collisions / etc.
+  // Move the background and player
   this.bg.update();
   this.player.update();
 
+  // Figure out if player is firing, and fire when they're weapon is reloaded
+  if(this.laserTimer > 0){
+    this.laserTimer--;
+  }
   if(keysDown[spaceKey] && this.laserTimer === 0){
     this.projectiles.push(new friendlyProjectileObj(this.player.pos.x, this.player.pos.y, 1));
     this.laserTimer = 15;
   }
 
+  // Update each projectile and remove it from the game if it's off the map
   for(var i = 0; i < this.projectiles.length; i++){
     this.projectiles[i].update();
-    if(this.projectiles[i].y < 0 || this.projectiles[i].y > 400 ||
-       this.projectiles[i].x < 0 || this.projectiles[i].x > 400){
+    if(this.projectiles[i].pos.y < 0 || this.projectiles[i].pos.y > 400 ||
+       this.projectiles[i].pos.x < 0 || this.projectiles[i].pos.x > 400){
       this.projectiles.splice(i, 1);
     }
   }
 
+  // Check for collisions between enemies and projectiles
   for(var i = 0; i < this.enemies.length; i++){
     this.enemies[i].update();
     for(var j = 0; j < this.projectiles.length; j++){
       if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
+        // There was a collision; decrease this enemy's health and remove the projectile from the game
         this.enemies[i].health--;
         this.projectiles.splice(j, 1);
       }
       if(this.enemies[i].health <= 0){
+        // If enemy is dead, remove him from game
         this.enemies.splice(i, 1);
       }
     }
