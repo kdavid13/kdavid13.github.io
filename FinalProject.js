@@ -8,6 +8,15 @@ var toRads = TWO_PI/360;
 // Description:
 ////////////////////////////////////////
 
+// GLOBALS
+var keysDown = new Array(256);
+var wKey = 87;
+var aKey = 65;
+var sKey = 83;
+var dKey = 68;
+var spaceKey = 32;
+
+
 /************************************************/
 /*          Menu Background Object              */
 /************************************************/
@@ -272,6 +281,32 @@ gameBackgroundObj.prototype.display = function(){
 
 
 /************************************************/
+/*              Projectile Object               */
+/************************************************/
+
+var friendlyProjectileObj = function(x, y, type){
+  this.pos = new PVector(x, y);
+  this.type = type;
+  switch(this.type){
+    default:
+      this.speed = 1;
+      this.damage = 1;
+      break;
+  }
+};
+
+friendlyProjectileObj.prototype.update = function(){
+  this.pos.y -= this.speed;
+};
+
+friendlyProjectileObj.prototype.display = function(){
+  noStroke();
+  fill(0, 255, 0);
+  ellipse(this.pos.x, this.pos.y, 3, 7);
+};
+
+
+/************************************************/
 /*               Spaceship Object               */
 /************************************************/
 var spaceshipObj = function(x, y, type) {
@@ -295,8 +330,22 @@ spaceshipObj.prototype.applyForce = function(force) {
 };
 
 spaceshipObj.prototype.update = function() {
-    var spaceFriction = PVector.mult(this.vel, -0.25);
+    var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
+
+    if(keysDown[wKey]){
+      this.applyForce(new PVector(0, -this.speed));
+    }
+    if(keysDown[aKey]){
+      this.applyForce(new PVector(-this.speed, 0));
+    }
+    if(keysDown[dKey]){
+      this.applyForce(new PVector(this.speed, 0));
+    }
+    if(keysDown[sKey]){
+      this.applyForce(new PVector(0, this.speed));
+    }
+
     this.vel.add(this.acc);
 
     // Keep the ship within the bounds of the canvas
@@ -378,17 +427,28 @@ spaceshipObj.prototype.display = function() {
 /************************************************/
 /*               Alien Object                   */
 /************************************************/
+
+
 var alienObj = function(x, y, type) {
-    this.x = x;
-    this.y = y;
+    this.pos = new PVector(x, y);
     this.type = type;
+
+    this.width = 40;
+    this.height = 40;
+
     this.speed = 1;
     this.armor = 1;
     this.weapon = 1;
+    this.health = 10;
 };
+
+alienObj.prototype.update = function() {
+
+};
+
 alienObj.prototype.draw = function() {
     pushMatrix();
-    translate(this.x, this.y);
+    translate(this.pos.x, this.pos.y);
     rotate(this.angle);
 
     if (this.type === 1) { //Draw basic ship
@@ -425,6 +485,10 @@ alienObj.prototype.draw = function() {
     popMatrix();
 };
 
+alienObj.prototype.display = function(){
+  this.draw();
+};
+
 
 /************************************************/
 /*                Play State = 1                */
@@ -434,12 +498,58 @@ alienObj.prototype.draw = function() {
 var play_state = function(){
   this.bg = new gameBackgroundObj();
   this.player = new spaceshipObj(200, 350, 1);
+  this.projectiles = [];
+  this.enemies = [];
+
+  for(var i = 0; i<5; i++){
+    this.enemies.push(new alienObj(67 + i*67, 50, 1));
+  }
+
+  this.laserTimer = 0;
+};
+
+play_state.prototype.checkCollision = function(obj, x, y){
+  if(x < obj.pos.x + (obj.width / 2) && x > obj.pos.x - (obj.width / 2) &&
+     y < obj.pos.y + (obj.height / 2) && y > obj.pos.y - (obj.height / 2)){
+       return true;
+     }
+  return false;
 };
 
 play_state.prototype.update = function(me){
+  if(this.laserTimer > 0){
+    this.laserTimer--;
+  }
+
   // TODO: Move things around / check collisions / etc.
   this.bg.update();
   this.player.update();
+
+  if(keysDown[spaceKey] && this.laserTimer === 0){
+    this.projectiles.push(new friendlyProjectileObj(this.player.pos.x, this.player.pos.y, 1));
+    this.laserTimer = 15;
+  }
+
+  for(var i = 0; i < this.projectiles.length; i++){
+    this.projectiles[i].update();
+    if(this.projectiles[i].y < 0 || this.projectiles[i].y > 400 ||
+       this.projectiles[i].x < 0 || this.projectiles[i].x > 400){
+      this.projectiles.splice(i, 1);
+    }
+  }
+
+  for(var i = 0; i < this.enemies.length; i++){
+    this.enemies[i].update();
+    for(var j = 0; j < this.projectiles.length; j++){
+      if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
+        this.enemies[i].health--;
+        this.projectiles.splice(j, 1);
+      }
+      if(this.enemies[i].health <= 0){
+        this.enemies.splice(i, 1);
+      }
+    }
+  }
 };
 
 play_state.prototype.checkState = function(me){
@@ -449,6 +559,12 @@ play_state.prototype.checkState = function(me){
 play_state.prototype.display = function(me){
   this.bg.display();
   this.player.display();
+  for(var i = 0; i < this.projectiles.length; i++){
+    this.projectiles[i].display();
+  }
+  for(var i = 0; i < this.enemies.length; i++){
+    this.enemies[i].display();
+  }
 };
 
 
@@ -535,6 +651,10 @@ var gameShellObj = function(){
   this.currState = 0;
 
   this.difficulty = "medium";
+
+  for(var i = 0; i < keysDown.length; i++){
+    keysDown[i] = false;
+  }
 };
 gameShellObj.prototype.update = function(){
   this.state[this.currState].update(this);
@@ -560,28 +680,12 @@ var mouseClicked = function() {
   shell.state[shell.currState].checkState(shell);
 };
 
-var VERT_THRUST_FORCE = 2.5;
-var HORIZ_THRUST_FORCE = 2;
-
 var keyPressed = function() {
-  if(shell.currState === 1){
-    switch(keyCode) {
-      case 87: //user pressed w key
-        shell.state[1].player.applyForce(new PVector(0, -VERT_THRUST_FORCE));
-        break;
-      case 65:
-        shell.state[1].player.applyForce(new PVector(-HORIZ_THRUST_FORCE, 0));
-        break;
-      case 83:
-        shell.state[1].player.applyForce(new PVector(0, VERT_THRUST_FORCE));
-        break;
-      case 68:
-        shell.state[1].player.applyForce(new PVector(HORIZ_THRUST_FORCE, 0));
-        break;
-      default:
-        break;
-    }
-  }
+  keysDown[keyCode] = true;
+};
+
+var keyReleased = function() {
+  keysDown[keyCode] = false;
 };
 
 
