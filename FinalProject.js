@@ -34,6 +34,7 @@ var menuBackgroundObj = function(){
 };
 
 menuBackgroundObj.prototype.display = function(){
+  pushMatrix();
   noStroke();
   // Black background
   fill(0, 0, 0);
@@ -43,7 +44,6 @@ menuBackgroundObj.prototype.display = function(){
   fill(255, 255, 255);
 
   // make stars move with mouse
-  pushMatrix();
   translate(-mouseX/5 + 20, -mouseY/5 + 20);
   for(var i = 0; i < this.square * this.square; i++){
     ellipse(this.stars[i].x, this.stars[i].y, 2, 2);
@@ -266,6 +266,7 @@ gameBackgroundObj.prototype.update = function(){
 };
 
 gameBackgroundObj.prototype.display = function(){
+  pushMatrix();
   noStroke();
   // Black background
   fill(0, 0, 0);
@@ -277,6 +278,7 @@ gameBackgroundObj.prototype.display = function(){
   for(var i = 0; i < this.square * this.square; i++){
     ellipse(this.stars[i].x, this.stars[i].y, 2, 2);
   }
+  popMatrix();
 };
 
 
@@ -313,9 +315,11 @@ projectileObj.prototype.update = function(){
 };
 
 projectileObj.prototype.display = function(){
-  //noStroke();
+  pushMatrix();
+  noStroke();
   fill(this.red, this.green, this.blue);
   ellipse(this.pos.x, this.pos.y, 3, 7);
+  popMatrix();
 };
 
 
@@ -778,6 +782,7 @@ quit_state.prototype.update = function(me){};
 quit_state.prototype.checkState = function(me){};
 
 quit_state.prototype.display = function(me){
+  pushMatrix();
   fill(255, 255, 255);
   noStroke();
   rect(0, 0, 400, 400);
@@ -785,6 +790,7 @@ quit_state.prototype.display = function(me){
   textSize(45);
   fill(0, 0, 0);
   text("You've " + me.winLoss, 50, 200);
+  popMatrix();
 };
 
 
