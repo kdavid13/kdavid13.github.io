@@ -611,9 +611,13 @@ play_state.prototype.update = function(me){
 play_state.prototype.checkState = function(me){
   if(this.enemies.length == 0){
     // Player has won
+    me.winLoss = "won!";
+    me.currState = 4;
   }
   if(this.player.health == 0){
     // Player has lost
+    me.winLoss = "lost!";
+    me.currState = 4;
   }
 };
 
@@ -698,6 +702,10 @@ quit_state.prototype.display = function(me){
   fill(255, 255, 255);
   noStroke();
   rect(0, 0, 400, 400);
+
+  textSize(45);
+  fill(0, 0, 0);
+  text("You've " + me.winLoss, 50, 200);
 };
 
 
@@ -712,6 +720,8 @@ var gameShellObj = function(){
   this.currState = 0;
 
   this.difficulty = "medium";
+
+  this.winLoss = "quit.";
 
   for(var i = 0; i < keysDown.length; i++){
     keysDown[i] = false;
