@@ -1,5 +1,5 @@
 var sketchProc=function(processingInstance){ with (processingInstance){ size(400, 400);
-frameRate(60);
+frameRate(30);
 var toRads = TWO_PI/360;
 ////////////////////////////////////////
 // Name: Andrew Repp and David Kusterer
@@ -488,40 +488,113 @@ alienObj.prototype.draw = function() {
     pushMatrix();
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
-
+    scale(1);
     if (this.type === 1) { //Draw basic ship
-        fill(120, 120, 120);
-        beginShape();
-            vertex(8, -20);
-            vertex(20, -35);
-            vertex(20, -5);
-            vertex(8, 20);
-            vertex(8, 0);
-            vertex(0, 17);
-            vertex(-8, 0);
-            vertex(-8, 20);
-            vertex(-20, -5);
-            vertex(-20, -35);
-            vertex(-8, -20);
-            vertex(0, -16);
-            vertex(8, -20);
-        endShape();
-
         strokeWeight(1);
-        fill(184, 99, 201);
-        triangle(-17,-28,-9, 12, -17, -6);
-        triangle(17,-28,9, 12, 17, -6);
-         triangle(8,-13,-8, -13, 0, 6);
-        //arc(73, 42, 16, 5, 180*toRads, 0);
-        strokeWeight(2);
+        
+        /** Front Wings **/
+        fill(131, 97, 145);
+        arc(-9, -1, 37, 96, 86 * toRads, 180 * toRads); //left front wing
+        arc(9, -1, 37, 96, 0 * toRads, 94 * toRads); //right front wing
+        line(-7, 47, -11, 36); //left wing border lines
+        line(-11, 36, -9, 34);
+        line(-8, 34, -8, 17);
+        
+        line(7, 47, 11, 36); //right wing border lines
+        line(11, 36, 9, 34);
+        line(8, 34, 8, 17); 
+        
+        /** Middle Wings **/
+        fill(113, 84, 125); //front bottom curved section
+        arc(0, 10, 45, 14, -31 * toRads, 218 * toRads); //
+        rotate(6 * toRads);
+        arc(-9, 12, 43, 96, 172 * toRads, 258 * toRads); //left middle wing
+        rotate(-12 * toRads);
+        arc(9, 12, 43, 96, -80 * toRads, 9 * toRads); //right middle wing
+        rotate(6 * toRads);
+        line(-32, 17, -21, 13); //front line of middle wing left
+        line(32, 17, 21, 13); //right
+        
+        fill(82, 81, 105);
+        ellipse(-7, 15, 20, 20); //big circles by back wings left
+        ellipse(7, 15, 20, 20); //right
+        fill(131, 97, 145);
+        ellipse(-9, 15, 10, 10); //small circles by back wings left
+        ellipse(9, 15, 10, 10); //right
+        
+        fill(138, 103, 153);
+        rotate(13 * toRads);
+        arc(-13, -15, 40, 70, 180 * toRads, 258 * toRads); //left back wing
+        rotate(-26 * toRads);
+        arc(13, -15, 40, 70, -80 * toRads, 0 * toRads); //right back wing
+        rotate(13 * toRads);
+        
+        fill(82, 81, 105);
+        ellipse(-10, -18, 20, 20); //big circles by back wings left
+        ellipse(10, -18, 20, 20); //right
+        fill(131, 97, 145);
+        ellipse(-10, -18, 10, 10); //small circles by back wings left
+        ellipse(10, -18, 10, 10); //right
+        
+        
+        
+        //ellipse(0, 0, 24, 45); //main body
+            beginShape(); //BEGIN - body
+                arc(0, 0, 26, 50, -41 * toRads, 221 * toRads);
+                vertex(0, -30);
+                vertex(10, -17);
+            endShape(); //END - body
+            beginShape(); //BEGIN - body
+                arc(0, 0, 13, 20, -41 * toRads, 221 * toRads);
+                vertex(0, -21);
+                vertex(5, -7);
+            endShape(); //END - body
+        fill(131, 97, 145);
 
+        //back wing lines
+        line(-9, -24, -5, -52);
+        line(9, -24, 5, -52);
+        line(-28, -21, -16, -19);
+        line(28, -21, 16, -19);
+        
+        //green circles
+        strokeWeight(1.5);
+        fill(62, 214, 70);
+        ellipse(6, 8, 9, 9); //big three on back
+        ellipse(-6, 8, 9, 9);
+        ellipse(0, -15, 11, 12);
+        
+        //left wing middle
+        ellipse(-23, 2, 5, 7);
+        ellipse(-22, -10, 5, 7);
+        //right wing
+        ellipse(23, 2, 5, 7);
+        ellipse(22, -10, 5, 7);
+        
+        strokeWeight(1);
+        //back left
+        ellipse(-17, -32, 3, 5);
+        ellipse(-14, -38, 3, 5);
+        ellipse(-11, -44, 3, 5);
+        //back right
+        ellipse(17, -32, 3, 5);
+        ellipse(14, -38, 3, 5);
+        ellipse(11, -44, 3, 5);
+        
+        //left wing front
+        ellipse(-20, 22, 4, 6);
+        ellipse(-16, 34, 4, 6);
+        //right wing front
+        ellipse(20, 22, 4, 6);
+        ellipse(16, 34, 4, 6);
     } else if (this.type === 2) { //Draw basic ship
-
+    
     } else if (this.type === 3) { //Draw basic ship
-
+    
     }
     popMatrix();
 };
+
 
 alienObj.prototype.display = function(){
   this.draw();
@@ -609,12 +682,12 @@ play_state.prototype.update = function(me){
 };
 
 play_state.prototype.checkState = function(me){
-  if(this.enemies.length == 0){
+  if(this.enemies.length === 0){
     // Player has won
     me.winLoss = "won!";
     me.currState = 4;
   }
-  if(this.player.health == 0){
+  if(this.player.health === 0){
     // Player has lost
     me.winLoss = "lost!";
     me.currState = 4;
