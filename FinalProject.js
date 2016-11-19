@@ -284,24 +284,37 @@ gameBackgroundObj.prototype.display = function(){
 /*              Projectile Object               */
 /************************************************/
 
-var friendlyProjectileObj = function(x, y, type){
+var projectileObj = function(x, y, type, target){
   this.pos = new PVector(x, y);
   this.type = type;
   switch(this.type){
+    case "friendly":
+      this.speed = new PVector(0, -2);
+      this.red = 0;
+      this.green = 255;
+      this.blue = 0;
+      break;
+    case "enemy":
+      this.speed = new PVector(target.x - x, target.y - y);
+      this.speed.normalize();
+      this.speed.mult(2);
+      this.red = 255;
+      this.green = 0;
+      this.blue = 0;
+      break;
     default:
-      this.speed = 1;
-      this.damage = 1;
+      println("Something horrible has happened.");
       break;
   }
 };
 
-friendlyProjectileObj.prototype.update = function(){
-  this.pos.y -= this.speed;
+projectileObj.prototype.update = function(){
+  this.pos.add(this.speed);
 };
 
-friendlyProjectileObj.prototype.display = function(){
+projectileObj.prototype.display = function(){
   noStroke();
-  fill(0, 255, 0);
+  fill(this.red, this.green, this.blue);
   ellipse(this.pos.x, this.pos.y, 3, 7);
 };
 
@@ -316,12 +329,15 @@ var spaceshipObj = function(x, y, type) {
 
     this.mass = 5;
     this.width = 35;
-    this.height = 35;
+    this.height = 45;
 
     this.type = type;
     this.speed = 1;
     this.armor = 1;
     this.weapon = 1;
+    this.health = 10;
+
+    this.reloadTimer = 0;
 };
 
 spaceshipObj.prototype.applyForce = function(force) {
@@ -330,6 +346,11 @@ spaceshipObj.prototype.applyForce = function(force) {
 };
 
 spaceshipObj.prototype.update = function() {
+    // Reload, if necessary
+    if(this.reloadTimer > 0){
+      this.reloadTimer--;
+    }
+
     // Make it so the ship will come to a stop if no keys are being pressed
     var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
@@ -436,6 +457,7 @@ spaceshipObj.prototype.display = function() {
 
 var alienObj = function(x, y, type) {
     this.pos = new PVector(x, y);
+    this.origin = new PVector(x, y);
     this.type = type;
 
     this.width = 40;
@@ -445,10 +467,21 @@ var alienObj = function(x, y, type) {
     this.armor = 1;
     this.weapon = 1;
     this.health = 10;
+
+    this.reloadTimer = floor(random(90, 150));
 };
 
 alienObj.prototype.update = function() {
+  //println(this.reloadTimer);
+  // Reload the ship's guns, if necessary
+    if(this.reloadTimer > 0){
+      this.reloadTimer--;
+    }
 
+    this.pos.x += this.speed;
+    if(abs(this.pos.x - this.origin.x) > 20){
+      this.speed *= -1;
+    }
 };
 
 alienObj.prototype.draw = function() {
@@ -509,8 +542,6 @@ var play_state = function(){
   for(var i = 0; i<5; i++){
     this.enemies.push(new alienObj(67 + i*67, 50, 1));
   }
-
-  this.laserTimer = 0;
 };
 
 play_state.prototype.checkCollision = function(obj, x, y){
@@ -527,12 +558,9 @@ play_state.prototype.update = function(me){
   this.player.update();
 
   // Figure out if player is firing, and fire when they're weapon is reloaded
-  if(this.laserTimer > 0){
-    this.laserTimer--;
-  }
-  if(keysDown[spaceKey] && this.laserTimer === 0){
-    this.projectiles.push(new friendlyProjectileObj(this.player.pos.x, this.player.pos.y, 1));
-    this.laserTimer = 15;
+  if(keysDown[spaceKey] && this.player.reloadTimer === 0){
+    this.projectiles.push(new projectileObj(this.player.pos.x, this.player.pos.y, "friendly"));
+    this.player.reloadTimer = 15;
   }
 
   // Update each projectile and remove it from the game if it's off the map
@@ -541,28 +569,52 @@ play_state.prototype.update = function(me){
     if(this.projectiles[i].pos.y < 0 || this.projectiles[i].pos.y > 400 ||
        this.projectiles[i].pos.x < 0 || this.projectiles[i].pos.x > 400){
       this.projectiles.splice(i, 1);
+      continue;
+    }
+    if(this.projectiles[i].type === "enemy"){
+      if(this.checkCollision(this.player, this.projectiles[i].pos.x, this.projectiles[i].pos.y)){
+        this.player.health--;
+        this.projectiles.splice(i, 1);
+      }
     }
   }
 
   // Check for collisions between enemies and projectiles
   for(var i = 0; i < this.enemies.length; i++){
     this.enemies[i].update();
+
+    // If an enemy is reloaded, they should fire their weapon
+    if(this.enemies[i].reloadTimer === 0){
+      this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", this.player.pos));
+      this.enemies[i].reloadTimer = floor(random(90, 150));
+    }
+
     for(var j = 0; j < this.projectiles.length; j++){
-      if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
-        // There was a collision; decrease this enemy's health and remove the projectile from the game
-        this.enemies[i].health--;
-        this.projectiles.splice(j, 1);
-      }
-      if(this.enemies[i].health <= 0){
-        // If enemy is dead, remove him from game
-        this.enemies.splice(i, 1);
+      if(this.projectiles[j].type === "friendly"){
+        if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
+          // There was a collision; decrease this enemy's health and remove the projectile from the game
+          this.enemies[i].health--;
+          this.projectiles.splice(j, 1);
+        }
       }
     }
+
+    // If enemy is dead, remove him from game
+    if(this.enemies[i].health <= 0){
+      this.enemies.splice(i, 1);
+    }
   }
+
+  this.checkState(me);
 };
 
 play_state.prototype.checkState = function(me){
-  // TODO: Check win/loss
+  if(this.enemies.length == 0){
+    // Player has won
+  }
+  if(this.player.health == 0){
+    // Player has lost
+  }
 };
 
 play_state.prototype.display = function(me){
