@@ -490,6 +490,7 @@ alienObj.prototype.draw = function() {
     rotate(this.angle);
     scale(1);
     if (this.type === 1) { //Draw basic ship
+        stroke(0, 0, 0);
         strokeWeight(1);
         
         /** Front Wings **/
