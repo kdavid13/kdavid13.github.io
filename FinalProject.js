@@ -489,14 +489,18 @@ alienObj.prototype.draw = function() {
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
     scale(1);
+    stroke(0, 0, 0);
     if (this.type === 1) { //Draw basic ship
-        stroke(0, 0, 0);
         strokeWeight(1);
         
         /** Front Wings **/
         fill(131, 97, 145);
         arc(-9, -1, 37, 96, 86 * toRads, 180 * toRads); //left front wing
         arc(9, -1, 37, 96, 0 * toRads, 94 * toRads); //right front wing
+        fill(0, 0, 0);
+        triangle(-7, 47, -11, 36, -8, 33);
+        triangle(7, 47, 11, 36, 8, 33);
+        /*
         line(-7, 47, -11, 36); //left wing border lines
         line(-11, 36, -9, 34);
         line(-8, 34, -8, 17);
@@ -504,7 +508,8 @@ alienObj.prototype.draw = function() {
         line(7, 47, 11, 36); //right wing border lines
         line(11, 36, 9, 34);
         line(8, 34, 8, 17); 
-        
+        */
+      
         /** Middle Wings **/
         fill(113, 84, 125); //front bottom curved section
         arc(0, 10, 45, 14, -31 * toRads, 218 * toRads); //
