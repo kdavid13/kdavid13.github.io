@@ -313,7 +313,7 @@ projectileObj.prototype.update = function(){
 };
 
 projectileObj.prototype.display = function(){
-  noStroke();
+  //noStroke();
   fill(this.red, this.green, this.blue);
   ellipse(this.pos.x, this.pos.y, 3, 7);
 };
