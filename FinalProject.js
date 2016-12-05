@@ -16,39 +16,82 @@ var sKey = 83;
 var dKey = 68;
 var spaceKey = 32;
 
+var MAP_SPEED = 2;
+
 
 /************************************************/
-/*          Menu Background Object              */
+/*              Background Object               */
 /************************************************/
 
+var starObj = function(){
+    this.x = random(425);
+    this.y = random(425);
+    this.brightness = random(50, 255);
+    this.size = random(0.1, 2);
+};
 
-var menuBackgroundObj = function(){
-  this.stars = [];
-  this.square = 23;
-  for(var i = 0; i < this.square; i++){
-    for(var j = 0; j < this.square; j++){
-      // Place stars every 20 (give or take 5) pixels
-      this.stars.push(new PVector(i * 20 + random(-5, 5), j * 20 + random(-5, 5)));
-    }
+var backgroundObj = function(type){
+    this.stars = [];
+    this.type = type;
+    switch(this.type){
+        case "menu":
+            this.numStars = 450;
+            for(var i = 0; i < this.numStars; i++){
+              this.stars.push(new starObj());
+            }
+            break;
+        case "game":
+            this.numStars = 350;
+            for(var i = 0; i < this.numStars; i++){
+                this.stars.push(new starObj());
+            }
+            break;
   }
 };
 
-menuBackgroundObj.prototype.display = function(){
-  pushMatrix();
-  noStroke();
-  // Black background
-  fill(0, 0, 0);
-  rect(0, 0, 400, 400);
+backgroundObj.prototype.update = function(){
+    for(var i = 0; i < this.numStars; i++){
+        this.stars[i].y += MAP_SPEED;
+        if (this.stars[i].y > 400){
+            this.stars[i].y -= 400;
+        }
+    }
+};
 
-  // Stars
-  fill(255, 255, 255);
+backgroundObj.prototype.display = function(){
+    switch(this.type){
+        case "menu":
+        {
+            pushMatrix();
+            //noStroke();
+            // Black background
+            fill(0, 0, 0);
+            rect(0, 0, 400, 400);
 
-  // make stars move with mouse
-  translate(-mouseX/5 + 20, -mouseY/5 + 20);
-  for(var i = 0; i < this.square * this.square; i++){
-    ellipse(this.stars[i].x, this.stars[i].y, 2, 2);
-  }
-  popMatrix();
+            // make stars move with mouse
+            translate(-mouseX/5 + 20, -mouseY/5 + 20);
+            for(var i = 0; i < this.numStars; i++){
+              strokeWeight(this.stars[i].size);
+              stroke(this.stars[i].brightness);
+              point(this.stars[i].x, this.stars[i].y);// this.stars[i].size, this.stars[i].size);
+            }
+            popMatrix();
+            break;
+        }
+        case "game":
+        {
+            // Black background
+            fill(0, 0, 0);
+            rect(0, 0, 400, 400);
+
+            for(var i = 0; i < this.numStars; i++){
+              strokeWeight(this.stars[i].size);
+              stroke(this.stars[i].brightness);
+              point(this.stars[i].x, this.stars[i].y);// this.stars[i].size, this.stars[i].size);
+            }
+            break;
+        }
+    }
 };
 
 
@@ -80,6 +123,7 @@ menuOptionObj.prototype.mouseIsOn = function(){
 
 menuOptionObj.prototype.display = function(){
   textFont(menuFont, this.fontSize);
+  noStroke();
   if (this.mouseIsOn() === true){
     fill(255, 255, 255);
     rect(this.x - this.width/2, this.y - this.height/2, this.width, this.height);
@@ -138,7 +182,7 @@ mainMenuObj.prototype.display = function(){
 
 var navMenuObj = function(){
   this.back = new menuOptionObj("<- Back", 60, 375, 25);
-  this.newGame = new menuOptionObj("New Game ->", 315, 375, 25);
+  this.newGame = new menuOptionObj("Continue ->", 315, 375, 25);
 };
 
 navMenuObj.prototype.mouseIsOn = function(currState){
@@ -207,12 +251,42 @@ diffMenuObj.prototype.display = function(currDiff){
 
 
 /************************************************/
+/*            Upgrade Menu Object               */
+/************************************************/
+
+var upgradeMenuObj = function(){
+    this.upgradeArmor = new menuOptionObj("Upgrade Armor", 200, 150, 30);
+    this.upgradeGuns = new menuOptionObj("Upgrade Guns", 200, 200, 30);
+    this.upgradeSpeed = new menuOptionObj("Upgrade Speed", 200, 250, 30);
+};
+
+upgradeMenuObj.prototype.mouseIsOn = function(currDiff){
+  if(this.upgradeArmor.mouseIsOn() === true){
+    return "armor";
+  }
+  if(this.upgradeGuns.mouseIsOn() === true){
+    return "guns";
+  }
+  if(this.upgradeSpeed.mouseIsOn() === true){
+    return "speed";
+  }
+
+  return currDiff;
+};
+
+upgradeMenuObj.prototype.display = function(){
+    this.upgradeArmor.display();
+    this.upgradeGuns.display();
+    this.upgradeSpeed.display();
+};
+
+/************************************************/
 /*               Main Menu State = 0            */
 /************************************************/
 
 
 var mainMenu_state = function(){
-  this.bg = new menuBackgroundObj();
+  this.bg = new backgroundObj("menu");
   this.menu = new mainMenuObj();
 };
 
@@ -237,50 +311,6 @@ mainMenu_state.prototype.display = function(me){
   text("SPACE", 95, 65);
   text("WARRIORS", 45, 125);
 };
-
-
-/************************************************/
-/*          Game Background Object              */
-/************************************************/
-
-var MAP_SPEED = 1;
-
-var gameBackgroundObj = function(){
-  this.stars = [];
-  this.square = 20;
-  for(var i = 0; i < this.square; i++){
-    for(var j = 0; j < this.square; j++){
-      // Place stars every 20 (give or take 5) pixels
-      this.stars.push(new PVector(i * 20 + random(-5, 5), j * 20 + random(-5, 5)));
-    }
-  }
-};
-
-gameBackgroundObj.prototype.update = function(){
-    for(var i = 0; i < this.square * this.square; i++){
-        this.stars[i].y += MAP_SPEED;
-        if (this.stars[i].y > 400){
-            this.stars[i].y -= 400;
-        }
-    }
-};
-
-gameBackgroundObj.prototype.display = function(){
-  pushMatrix();
-  noStroke();
-  // Black background
-  fill(0, 0, 0);
-  rect(0, 0, 400, 400);
-
-  // Stars
-  fill(255, 255, 255);
-
-  for(var i = 0; i < this.square * this.square; i++){
-    ellipse(this.stars[i].x, this.stars[i].y, 2, 2);
-  }
-  popMatrix();
-};
-
 
 /************************************************/
 /*              Projectile Object               */
@@ -496,7 +526,7 @@ alienObj.prototype.draw = function() {
     stroke(0, 0, 0);
     if (this.type === 1) { //Draw basic ship
         strokeWeight(1);
-        
+
         /** Front Wings **/
         fill(131, 97, 145);
         arc(-9, -1, 37, 96, 86 * toRads, 180 * toRads); //left front wing
@@ -508,12 +538,12 @@ alienObj.prototype.draw = function() {
         line(-7, 47, -11, 36); //left wing border lines
         line(-11, 36, -9, 34);
         line(-8, 34, -8, 17);
-        
+
         line(7, 47, 11, 36); //right wing border lines
         line(11, 36, 9, 34);
-        line(8, 34, 8, 17); 
+        line(8, 34, 8, 17);
         */
-      
+
         /** Middle Wings **/
         fill(113, 84, 125); //front bottom curved section
         arc(0, 10, 45, 14, -31 * toRads, 218 * toRads); //
@@ -524,30 +554,30 @@ alienObj.prototype.draw = function() {
         rotate(6 * toRads);
         line(-32, 17, -21, 13); //front line of middle wing left
         line(32, 17, 21, 13); //right
-        
+
         fill(82, 81, 105);
         ellipse(-7, 15, 20, 20); //big circles by back wings left
         ellipse(7, 15, 20, 20); //right
         fill(131, 97, 145);
         ellipse(-9, 15, 10, 10); //small circles by back wings left
         ellipse(9, 15, 10, 10); //right
-        
+
         fill(138, 103, 153);
         rotate(13 * toRads);
         arc(-13, -15, 40, 70, 180 * toRads, 258 * toRads); //left back wing
         rotate(-26 * toRads);
         arc(13, -15, 40, 70, -80 * toRads, 0 * toRads); //right back wing
         rotate(13 * toRads);
-        
+
         fill(82, 81, 105);
         ellipse(-10, -18, 20, 20); //big circles by back wings left
         ellipse(10, -18, 20, 20); //right
         fill(131, 97, 145);
         ellipse(-10, -18, 10, 10); //small circles by back wings left
         ellipse(10, -18, 10, 10); //right
-        
-        
-        
+
+
+
         //ellipse(0, 0, 24, 45); //main body
             beginShape(); //BEGIN - body
                 arc(0, 0, 26, 50, -41 * toRads, 221 * toRads);
@@ -566,21 +596,21 @@ alienObj.prototype.draw = function() {
         line(9, -24, 5, -52);
         line(-28, -21, -16, -19);
         line(28, -21, 16, -19);
-        
+
         //green circles
         strokeWeight(1.5);
         fill(62, 214, 70);
         ellipse(6, 8, 9, 9); //big three on back
         ellipse(-6, 8, 9, 9);
         ellipse(0, -15, 11, 12);
-        
+
         //left wing middle
         ellipse(-23, 2, 5, 7);
         ellipse(-22, -10, 5, 7);
         //right wing
         ellipse(23, 2, 5, 7);
         ellipse(22, -10, 5, 7);
-        
+
         strokeWeight(1);
         //back left
         ellipse(-17, -32, 3, 5);
@@ -590,7 +620,7 @@ alienObj.prototype.draw = function() {
         ellipse(17, -32, 3, 5);
         ellipse(14, -38, 3, 5);
         ellipse(11, -44, 3, 5);
-        
+
         //left wing front
         ellipse(-20, 22, 4, 6);
         ellipse(-16, 34, 4, 6);
@@ -598,9 +628,9 @@ alienObj.prototype.draw = function() {
         ellipse(20, 22, 4, 6);
         ellipse(16, 34, 4, 6);
     } else if (this.type === 2) { //Draw basic ship
-    
+
     } else if (this.type === 3) { //Draw basic ship
-    
+
     }
     popMatrix();
 };
@@ -617,14 +647,13 @@ alienObj.prototype.display = function(){
 
 
 var play_state = function(){
-  this.bg = new gameBackgroundObj();
+  this.bg = new backgroundObj("game");
   this.player = new spaceshipObj(200, 350, 1);
   this.projectiles = [];
   this.enemies = [];
 
-  for(var i = 0; i<5; i++){
-    this.enemies.push(new alienObj(67 + i*67, 50, 1));
-  }
+  this.level = 1;
+  this.initialized = false;
 };
 
 play_state.prototype.checkCollision = function(obj, x, y){
@@ -636,6 +665,31 @@ play_state.prototype.checkCollision = function(obj, x, y){
 };
 
 play_state.prototype.update = function(me){
+    if(this.initialized === false){
+        switch(this.level){
+            case 1:
+                this.enemies.push(new alienObj(268, 50, 1));
+                break;
+            case 2:
+                for(var i = 0; i<3; i++){
+                  this.enemies.push(new alienObj(134 + i*67, 50, 1));
+                }
+                this.player.type = 2;
+                break;
+            case 3:
+                for(var i = 0; i<5; i++){
+                  this.enemies.push(new alienObj(67 + i*67, 50, 1));
+                }
+                this.player.type = 3;
+                break;
+        }
+        this.projectiles.splice(0, this.projectiles.length);
+        this.player.pos.set(200, 350);
+        this.player.vel.set(0, 0);
+
+        this.initialized = true;
+    }
+
   // Move the background and player
   this.bg.update();
   this.player.update();
@@ -693,9 +747,16 @@ play_state.prototype.update = function(me){
 
 play_state.prototype.checkState = function(me){
   if(this.enemies.length === 0){
-    // Player has won
-    me.winLoss = "won!";
-    me.currState = 4;
+    // Player needs to go on to next level, but upgrade first
+    this.level++;
+    if(this.level > 3){
+        // Player has won
+        me.winLoss = "won!";
+        me.currState = 4;
+    } else {
+        this.initialized = false;
+        me.currState = 5;
+    }
   }
   if(this.player.health === 0){
     // Player has lost
@@ -722,7 +783,7 @@ play_state.prototype.display = function(me){
 
 
 var instr_state = function(){
-  this.bg = new menuBackgroundObj();
+  this.bg = new backgroundObj("menu");
   this.menu = new navMenuObj();
 };
 
@@ -740,8 +801,8 @@ instr_state.prototype.display = function(me){
   fill(255, 255, 255);
   text("You are a SPACE WARRIOR. You command a fighter ship and your goal is " +
         "to make it through several rounds of alien fighters, and defeat the " +
-        "the final boss. You control your ship with [MOVEMENT_KEYS] and fire " +
-        "your lasers with [FIRE_BUTTON].", 25, 25, 350, 300);
+        "the final boss. You control your ship with WASD and fire " +
+        "your lasers with SPACEBAR.", 25, 25, 350, 300);
 };
 
 
@@ -751,7 +812,7 @@ instr_state.prototype.display = function(me){
 
 
 var diff_state = function(){
-  this.bg = new menuBackgroundObj();
+  this.bg = new backgroundObj("menu");
   this.navMenu = new navMenuObj();
   this.diffMenu = new diffMenuObj();
 };
@@ -795,13 +856,39 @@ quit_state.prototype.display = function(me){
 
 
 /************************************************/
+/*             Upgrade State = 4                */
+/************************************************/
+
+var upgrade_state = function(){
+    this.bg = new backgroundObj("menu");
+    this.upgradeMenu = new upgradeMenuObj();
+    this.navMenu = new navMenuObj();
+
+    // upgrade status of ship?
+}
+
+upgrade_state.prototype.update = function(me){};
+
+upgrade_state.prototype.checkState = function(me){
+    me.currState = this.navMenu.mouseIsOn(5);
+};
+
+upgrade_state.prototype.display = function(me){
+    this.bg.display();
+    this.upgradeMenu.display();
+    this.navMenu.display();
+};
+
+
+
+/************************************************/
 /*             Game Shell Object                */
 /************************************************/
 
 
 var gameShellObj = function(){
   this.state = [new mainMenu_state(), new play_state(), new instr_state(),
-                new diff_state(), new quit_state()];
+                new diff_state(), new quit_state(), new upgrade_state()];
   this.currState = 0;
 
   this.difficulty = "medium";
