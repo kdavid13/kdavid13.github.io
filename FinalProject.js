@@ -352,7 +352,71 @@ projectileObj.prototype.display = function(){
   popMatrix();
 };
 
+/************************************************/
+/**             Particle object                **/
+/************************************************/
 
+var particleObj = function(x, y) {
+    this.position = new PVector(x, y);
+    this.direction = new PVector(random(-5, 5), random(-5, 5));
+    this.direction.normalize();
+    this.direction.mult(random(0.01, 0.7));
+    this.explodeDist = random(2, 15);
+    this.size = random(0.5, 3.5);
+    this.c1 = random(150, 255);
+    this.c2 = random(0, 100);
+    this.c3 = random(0, 40);
+    this.timer = 250;
+    this.state = "explode";
+}; 
+particleObj.prototype.update = function() {
+    this.position.add(this.direction);
+    this.explodeDist--;
+    if (this.timer <= 20) {
+        this.state = "inactive";
+    }
+    this.timer -= 2;
+};
+
+particleObj.prototype.display = function() {
+    pushMatrix();
+    fill(this.c1, this.c2, this.c3, this.timer);
+    noStroke();
+    ellipse(this.position.x, this.position.y, this.size, this.size);
+    popMatrix();
+};
+
+/************************************************/
+/*              Explosion object                */
+/************************************************/
+var explosionObj = function(x, y){
+    this.position = new PVector(x, y);
+    this.state = "active";
+    this.particles = [];
+    for (var i = 0; i < 100; i++) {
+        this.particles.push(new particleObj(this.position.x, this.position.y));   
+    }  
+};
+explosionObj.prototype.update = function() {
+    for (var i = 0; i < this.particles.length; i++){
+        this.particles[i].update();
+        
+        if (this.particles[i].state === "inactive"){
+            this.particles.splice(i, 1);
+        }
+    }
+    if (this.particles.length <= 3){
+        
+        this.state = "inactive";
+    }
+    
+};
+explosionObj.prototype.display = function() {
+    for (var i = 0; i < this.particles.length; i++){
+        this.particles[i].display();
+    }
+};                                                                       
+                                                                       
 /************************************************/
 /*               Spaceship Object               */
 /************************************************/
@@ -487,8 +551,6 @@ spaceshipObj.prototype.display = function() {
 /************************************************/
 /*               Alien Object                   */
 /************************************************/
-
-
 var alienObj = function(x, y, type) {
     this.pos = new PVector(x, y);
     this.origin = new PVector(x, y);
@@ -651,6 +713,7 @@ var play_state = function(){
   this.player = new spaceshipObj(200, 350, 1);
   this.projectiles = [];
   this.enemies = [];
+  this.explosions = [];
 
   this.level = 1;
   this.initialized = false;
@@ -738,10 +801,19 @@ play_state.prototype.update = function(me){
 
     // If enemy is dead, remove him from game
     if(this.enemies[i].health <= 0){
+      this.explosions.push(new explosionObj(this.enemies.x, this.enemies.y));
       this.enemies.splice(i, 1);
     }
   }
-
+    
+  for (var i = 0; i < this.explosions.length; i++) {
+    if (this.explosions[i].state === "inactive" && this.explosions.length !== 1) {
+        this.explosions.splice(i, 1);
+    }
+    this.explosions[i].update();
+    this.explosions[i].display();
+  }
+    
   this.checkState(me);
 };
 
