@@ -801,17 +801,18 @@ play_state.prototype.update = function(me){
 
     // If enemy is dead, remove him from game
     if(this.enemies[i].health <= 0){
-      this.explosions.push(new explosionObj(this.enemies.x, this.enemies.y));
+      this.explosions.push(new explosionObj(this.enemies[i].pos.x, this.enemies[i].pos.y));
       this.enemies.splice(i, 1);
     }
   }
     
   for (var i = 0; i < this.explosions.length; i++) {
     if (this.explosions[i].state === "inactive" && this.explosions.length !== 1) {
-        this.explosions.splice(i, 1);
+      this.explosions.splice(i, 1);
+    } else {
+      this.explosions[i].update();
+      this.explosions[i].display();
     }
-    this.explosions[i].update();
-    this.explosions[i].display();
   }
     
   this.checkState(me);
