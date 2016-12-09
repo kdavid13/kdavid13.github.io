@@ -714,6 +714,7 @@ var play_state = function(){
   this.projectiles = [];
   this.enemies = [];
   this.explosions = [];
+  this.endTimer = 100;
 
   this.level = 1;
   this.initialized = false;
@@ -811,15 +812,19 @@ play_state.prototype.update = function(me){
 
 play_state.prototype.checkState = function(me){
   if(this.enemies.length === 0){
-    // Player needs to go on to next level, but upgrade first
-    this.level++;
-    if(this.level > 3){
-        // Player has won
-        me.winLoss = "won!";
-        me.currState = 4;
-    } else {
-        this.initialized = false;
-        me.currState = 5;
+    this.endTimer--;
+    if (this.endTimer <= 5) { //Wait for a second until explosion completes
+        // Player needs to go on to next level, but upgrade first
+        this.level++;
+        this.explosions[0].state = "inactive"; //Prevent explosion from showing up in next level
+        if(this.level > 3){
+            // Player has won
+            me.winLoss = "won!";
+            me.currState = 4;
+        } else {
+            this.initialized = false;
+            me.currState = 5;
+        }
     }
   }
   if(this.player.health === 0){
