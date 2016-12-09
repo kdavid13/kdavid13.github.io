@@ -452,21 +452,22 @@ spaceshipObj.prototype.update = function() {
     // Make it so the ship will come to a stop if no keys are being pressed
     var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
-
-    // If W, A, S, or D is being pressed, move the ship accordingly
-    if(keysDown[wKey]){
-      this.applyForce(new PVector(0, -this.speed));
+    
+    if (this.health !== 0) {
+      // If W, A, S, or D is being pressed, move the ship accordingly
+      if(keysDown[wKey]){
+        this.applyForce(new PVector(0, -this.speed));
+      }
+      if(keysDown[aKey]){
+        this.applyForce(new PVector(-this.speed, 0));
+      }
+      if(keysDown[dKey]){
+        this.applyForce(new PVector(this.speed, 0));
+      }
+      if(keysDown[sKey]){
+        this.applyForce(new PVector(0, this.speed));
+      }
     }
-    if(keysDown[aKey]){
-      this.applyForce(new PVector(-this.speed, 0));
-    }
-    if(keysDown[dKey]){
-      this.applyForce(new PVector(this.speed, 0));
-    }
-    if(keysDown[sKey]){
-      this.applyForce(new PVector(0, this.speed));
-    }
-
     // Add the current acceleration to the velocity
     this.vel.add(this.acc);
 
@@ -817,6 +818,7 @@ play_state.prototype.checkState = function(me){
         // Player needs to go on to next level, but upgrade first
         this.level++;
         this.explosions[0].state = "inactive"; //Prevent explosion from showing up in next level
+        this.endTimer = 100; //Reset end timer so it works every level
         if(this.level > 3){
             // Player has won
             me.winLoss = "won!";
@@ -828,9 +830,15 @@ play_state.prototype.checkState = function(me){
     }
   }
   if(this.player.health === 0){
-    // Player has lost
-    me.winLoss = "lost!";
-    me.currState = 4;
+    this.explosions.push(new explosionObj(this.player.pos.x, this.player.pos.y));
+    this.endTimer--;
+    if(this.endTimer <= 5) {
+        // Player has lost
+        this.endTimer = 100;
+        this.explosions[0].state = "inactive";
+        me.winLoss = "lost!";
+        me.currState = 4;
+    }
   }
 };
 
