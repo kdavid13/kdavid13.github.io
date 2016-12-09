@@ -360,7 +360,7 @@ var particleObj = function(x, y) {
     this.position = new PVector(x, y);
     this.direction = new PVector(random(-5, 5), random(-5, 5));
     this.direction.normalize();
-    this.direction.mult(random(0.01, 0.7));
+    this.direction.mult(random(0.1, 0.9));
     this.explodeDist = random(2, 15);
     this.size = random(0.5, 3.5);
     this.c1 = random(150, 255);
@@ -393,7 +393,7 @@ var explosionObj = function(x, y){
     this.position = new PVector(x, y);
     this.state = "active";
     this.particles = [];
-    for (var i = 0; i < 100; i++) {
+    for (var i = 0; i < 200; i++) {
         this.particles.push(new particleObj(this.position.x, this.position.y));   
     }  
 };
@@ -806,15 +806,6 @@ play_state.prototype.update = function(me){
     }
   }
     
-  for (var i = 0; i < this.explosions.length; i++) {
-    if (this.explosions[i].state === "inactive" && this.explosions.length !== 1) {
-      this.explosions.splice(i, 1);
-    } else {
-      this.explosions[i].update();
-      this.explosions[i].display();
-    }
-  }
-    
   this.checkState(me);
 };
 
@@ -846,6 +837,14 @@ play_state.prototype.display = function(me){
   }
   for(var i = 0; i < this.enemies.length; i++){
     this.enemies[i].display();
+  }
+  for (var i = 0; i < this.explosions.length; i++) {
+    if (this.explosions[i].state === "inactive" && this.explosions.length !== 1) {
+      this.explosions.splice(i, 1);
+    } else {
+      this.explosions[i].update();
+      this.explosions[i].display();
+    }
   }
 };
 
