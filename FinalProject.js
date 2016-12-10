@@ -446,7 +446,7 @@ var spaceshipObj = function(x, y, type) {
     this.armor = 1;         // This is what incoming damage is multiplied by before being subtracted from player health
     this.weaponDamage = 1;  // This is how much damage the player does to enemies
     this.maxHealth = 10;    // This is how much health the player starts with each level
-    this.reloadSpeed = 15;  // This is how many frames the player has to wait to shoot another shot
+    this.reloadSpeed = 25;  // This is how many frames the player has to wait to shoot another shot
 
     this.health = this.maxHealth;
 
@@ -780,7 +780,7 @@ play_state.prototype.update = function(me){
   // Figure out if player is firing, and fire when they're weapon is reloaded
   if(keysDown[spaceKey] && me.player.reloadTimer === 0){
     this.projectiles.push(new projectileObj(me.player.pos.x, me.player.pos.y, "friendly"));
-    me.player.reloadTimer = 15;
+    me.player.reloadTimer = me.player.reloadSpeed;
   }
 
   // Update each projectile and remove it from the game if it's off the map
@@ -1001,7 +1001,7 @@ upgrade_state.prototype.checkState = function(me){
       return;
     }
     if(upgrade === "reload"){
-      me.player.reloadSpeed -= 3;
+      me.player.reloadSpeed -= 5;
       me.currState = 1;
       return;
     }
