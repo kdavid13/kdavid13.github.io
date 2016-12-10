@@ -596,22 +596,22 @@ alienObj.prototype.update = function() {
     if (!this.initialized) {
     switch(this.difficulty) {
         case "easy":
-            this.speed = 1;
-            this.health = 10;
+            this.speed = 0.5;
+            this.health = 5;
             this.reloadRangeLow = 90;
             this.reloadRangeHigh = 150;
             this.range = 50;
             break;
         case "medium":
-            this.speed = 2;
-            this.health = 15;
+            this.speed = 1;
+            this.health = 10;
             this.reloadRangeLow = 50;
             this.reloadRangeHigh = 90;
             this.range = 100;
             break;
         case "hard":
-            this.speed = 3;
-            this.health = 20;
+            this.speed = 2;
+            this.health = 15;
             this.reloadRangeLow = 25;
             this.reloadRangeHigh = 40;
             this.range = 150;
@@ -782,7 +782,7 @@ play_state.prototype.update = function(me){
     if(this.initialized === false){
         switch(this.level){
             case 1:
-                this.enemies.push(new alienObj(268, 50, 1, me.difficulty));
+                this.enemies.push(new alienObj(200, 50, 1, me.difficulty));
                 break;
             case 2:
                 for(var i = 0; i<3; i++){
