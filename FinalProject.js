@@ -368,7 +368,7 @@ var particleObj = function(x, y) {
     this.c3 = random(0, 40);
     this.timer = 250;
     this.state = "explode";
-}; 
+};
 particleObj.prototype.update = function() {
     this.position.add(this.direction);
     this.explodeDist--;
@@ -394,29 +394,29 @@ var explosionObj = function(x, y){
     this.state = "active";
     this.particles = [];
     for (var i = 0; i < 200; i++) {
-        this.particles.push(new particleObj(this.position.x, this.position.y));   
-    }  
+        this.particles.push(new particleObj(this.position.x, this.position.y));
+    }
 };
 explosionObj.prototype.update = function() {
     for (var i = 0; i < this.particles.length; i++){
         this.particles[i].update();
-        
+
         if (this.particles[i].state === "inactive"){
             this.particles.splice(i, 1);
         }
     }
     if (this.particles.length <= 3){
-        
+
         this.state = "inactive";
     }
-    
+
 };
 explosionObj.prototype.display = function() {
     for (var i = 0; i < this.particles.length; i++){
         this.particles[i].display();
     }
-};                                                                       
-                                                                       
+};
+
 /************************************************/
 /*               Spaceship Object               */
 /************************************************/
@@ -468,7 +468,7 @@ spaceshipObj.prototype.update = function() {
     // Make it so the ship will come to a stop if no keys are being pressed
     var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
-    
+
     if (this.health !== 0) {
       // If W, A, S, or D is being pressed, move the ship accordingly
       if(keysDown[wKey]){
@@ -831,7 +831,7 @@ play_state.prototype.update = function(me){
       this.enemies.splice(i, 1);
     }
   }
-    
+
   this.checkState(me);
 };
 
@@ -853,14 +853,8 @@ play_state.prototype.checkState = function(me){
         }
     }
   }
-<<<<<<< HEAD
-  if(me.player.health === 0){
-    // Player has lost
-    me.winLoss = "lost!";
-    me.currState = 4;
-=======
-  if(this.player.health === 0){
-    this.explosions.push(new explosionObj(this.player.pos.x, this.player.pos.y));
+if(me.player.health === 0){
+    this.explosions.push(new explosionObj(me.player.pos.x, me.player.pos.y));
     this.endTimer--;
     if(this.endTimer <= 5) {
         // Player has lost
@@ -869,7 +863,6 @@ play_state.prototype.checkState = function(me){
         me.winLoss = "lost!";
         me.currState = 4;
     }
->>>>>>> origin/master
   }
 };
 
