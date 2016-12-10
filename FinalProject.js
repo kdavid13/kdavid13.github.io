@@ -714,7 +714,7 @@ alienObj.prototype.display = function(){
 
 var play_state = function(){
   this.bg = new backgroundObj("game");
-  this.player = new spaceshipObj(200, 350, 1);
+
   this.projectiles = [];
   this.enemies = [];
   this.explosions = [];
@@ -742,30 +742,30 @@ play_state.prototype.update = function(me){
                 for(var i = 0; i<3; i++){
                   this.enemies.push(new alienObj(134 + i*67, 50, 1));
                 }
-                this.player.type = 2;
+                me.player.type = 2;
                 break;
             case 3:
                 for(var i = 0; i<5; i++){
                   this.enemies.push(new alienObj(67 + i*67, 50, 1));
                 }
-                this.player.type = 3;
+                me.player.type = 3;
                 break;
         }
         this.projectiles.splice(0, this.projectiles.length);
-        this.player.pos.set(200, 350);
-        this.player.vel.set(0, 0);
+        me.player.pos.set(200, 350);
+        me.player.vel.set(0, 0);
 
         this.initialized = true;
     }
 
   // Move the background and player
   this.bg.update();
-  this.player.update();
+  me.player.update();
 
   // Figure out if player is firing, and fire when they're weapon is reloaded
-  if(keysDown[spaceKey] && this.player.reloadTimer === 0){
-    this.projectiles.push(new projectileObj(this.player.pos.x, this.player.pos.y, "friendly"));
-    this.player.reloadTimer = 15;
+  if(keysDown[spaceKey] && me.player.reloadTimer === 0){
+    this.projectiles.push(new projectileObj(me.player.pos.x, me.player.pos.y, "friendly"));
+    me.player.reloadTimer = 15;
   }
 
   // Update each projectile and remove it from the game if it's off the map
@@ -777,8 +777,8 @@ play_state.prototype.update = function(me){
       continue;
     }
     if(this.projectiles[i].type === "enemy"){
-      if(this.checkCollision(this.player, this.projectiles[i].pos.x, this.projectiles[i].pos.y)){
-        this.player.health--;
+      if(this.checkCollision(me.player, this.projectiles[i].pos.x, this.projectiles[i].pos.y)){
+        me.player.health--;
         this.projectiles.splice(i, 1);
       }
     }
@@ -790,7 +790,7 @@ play_state.prototype.update = function(me){
 
     // If an enemy is reloaded, they should fire their weapon
     if(this.enemies[i].reloadTimer === 0){
-      this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", this.player.pos));
+      this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", me.player.pos));
       this.enemies[i].reloadTimer = floor(random(90, 150));
     }
 
@@ -832,11 +832,11 @@ play_state.prototype.checkState = function(me){
         }
     }
   }
-  if(this.player.health === 0 && this.player.dead === false){
-    this.explosions.push(new explosionObj(this.player.pos.x, this.player.pos.y));
-    this.player.dead = true;
+  if(me.player.health === 0 && me.player.dead === false){
+    this.explosions.push(new explosionObj(me.player.pos.x, me.player.pos.y));
+    me.player.dead = true;
   }
-  if(this.player.dead === true){
+  if(me.player.dead === true){
     this.endTimer--;
     if(this.endTimer <= 5) {
         // Player has lost
@@ -850,7 +850,7 @@ play_state.prototype.checkState = function(me){
 
 play_state.prototype.display = function(me){
   this.bg.display();
-  this.player.display();
+  me.player.display();
   for(var i = 0; i < this.projectiles.length; i++){
     this.projectiles[i].display();
   }
@@ -865,6 +865,8 @@ play_state.prototype.display = function(me){
       this.explosions[i].display();
     }
   }
+  fill(0, 255, 0);
+  text("Player Health: " + me.player.health, 10, 380);
 };
 
 
@@ -985,6 +987,8 @@ var gameShellObj = function(){
   this.difficulty = "medium";
 
   this.winLoss = "quit.";
+
+  this.player = new spaceshipObj(200, 350, 1);
 
   for(var i = 0; i < keysDown.length; i++){
     keysDown[i] = false;
