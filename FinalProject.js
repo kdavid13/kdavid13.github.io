@@ -255,29 +255,39 @@ diffMenuObj.prototype.display = function(currDiff){
 /************************************************/
 
 var upgradeMenuObj = function(){
-    this.upgradeArmor = new menuOptionObj("Upgrade Armor", 200, 150, 30);
-    this.upgradeGuns = new menuOptionObj("Upgrade Guns", 200, 200, 30);
-    this.upgradeSpeed = new menuOptionObj("Upgrade Speed", 200, 250, 30);
+    this.upgradeAcc = new menuOptionObj("Upgrade Acceleration", 200, 50, 30);
+    this.upgradeArmor = new menuOptionObj("Upgrade Armor", 200, 100, 30);
+    this.upgradeDamage = new menuOptionObj("Upgrade Weapon Damage", 200, 150, 30);
+    this.upgradeHealth = new menuOptionObj("Upgrade Max Health", 200, 200, 30);
+    this.upgradeReload = new menuOptionObj("Upgrade Reload Speed", 200, 250, 30);
 };
 
-upgradeMenuObj.prototype.mouseIsOn = function(currDiff){
+upgradeMenuObj.prototype.mouseIsOn = function(currDiff){//currDiff){
+  if(this.upgradeAcc.mouseIsOn() === true){
+    return "acceleration";
+  }
   if(this.upgradeArmor.mouseIsOn() === true){
     return "armor";
   }
-  if(this.upgradeGuns.mouseIsOn() === true){
-    return "guns";
+  if(this.upgradeDamage.mouseIsOn() === true){
+    return "damage";
   }
-  if(this.upgradeSpeed.mouseIsOn() === true){
-    return "speed";
+  if(this.upgradeHealth.mouseIsOn() === true){
+    return "health";
+  }
+  if(this.upgradeReload.mouseIsOn() === true){
+    return "reload";
   }
 
-  return currDiff;
+  return "none";
 };
 
 upgradeMenuObj.prototype.display = function(){
-    this.upgradeArmor.display();
-    this.upgradeGuns.display();
-    this.upgradeSpeed.display();
+  this.upgradeAcc.display();
+  this.upgradeArmor.display();
+  this.upgradeDamage.display();
+  this.upgradeHealth.display();
+  this.upgradeReload.display();
 };
 
 /************************************************/
@@ -430,10 +440,15 @@ var spaceshipObj = function(x, y, type) {
     this.height = 45;
 
     this.type = type;
-    this.speed = 1;
-    this.armor = 1;
-    this.weapon = 1;
-    this.health = 10;
+
+    /* Upgradables */
+    this.accIncr = 0.5;     // This is how quickly the ship accelerates
+    this.armor = 1;         // This is what incoming damage is multiplied by before being subtracted from player health
+    this.weaponDamage = 1;  // This is how much damage the player does to enemies
+    this.maxHealth = 10;    // This is how much health the player starts with each level
+    this.reloadSpeed = 15;  // This is how many frames the player has to wait to shoot another shot
+
+    this.health = this.maxHealth;
 
     this.dead = false;
 
@@ -452,22 +467,22 @@ spaceshipObj.prototype.update = function() {
     }
 
     // Make it so the ship will come to a stop if no keys are being pressed
-    var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
+    var spaceFriction = PVector.mult(this.vel, (this.accIncr / 8) * -1);
     this.applyForce(spaceFriction);
 
-    if (this.health !== 0) {
+    if (this.dead === false) {
       // If W, A, S, or D is being pressed, move the ship accordingly
       if(keysDown[wKey]){
-        this.applyForce(new PVector(0, -this.speed));
+        this.applyForce(new PVector(0, -this.accIncr));
       }
       if(keysDown[aKey]){
-        this.applyForce(new PVector(-this.speed, 0));
+        this.applyForce(new PVector(-this.accIncr, 0));
       }
       if(keysDown[dKey]){
-        this.applyForce(new PVector(this.speed, 0));
+        this.applyForce(new PVector(this.accIncr, 0));
       }
       if(keysDown[sKey]){
-        this.applyForce(new PVector(0, this.speed));
+        this.applyForce(new PVector(0, this.accIncr));
       }
     }
     // Add the current acceleration to the velocity
@@ -573,7 +588,6 @@ var alienObj = function(x, y, type) {
 };
 
 alienObj.prototype.update = function() {
-  //println(this.reloadTimer);
   // Reload the ship's guns, if necessary
     if(this.reloadTimer > 0){
       this.reloadTimer--;
@@ -752,6 +766,7 @@ play_state.prototype.update = function(me){
                 break;
         }
         this.projectiles.splice(0, this.projectiles.length);
+        me.player.health = me.player.maxHealth;
         me.player.pos.set(200, 350);
         me.player.vel.set(0, 0);
 
@@ -778,7 +793,7 @@ play_state.prototype.update = function(me){
     }
     if(this.projectiles[i].type === "enemy"){
       if(this.checkCollision(me.player, this.projectiles[i].pos.x, this.projectiles[i].pos.y)){
-        me.player.health--;
+        me.player.health -= 1 * me.player.armor;
         this.projectiles.splice(i, 1);
       }
     }
@@ -798,7 +813,7 @@ play_state.prototype.update = function(me){
       if(this.projectiles[j].type === "friendly"){
         if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
           // There was a collision; decrease this enemy's health and remove the projectile from the game
-          this.enemies[i].health--;
+          this.enemies[i].health -= me.player.weaponDamage;
           this.projectiles.splice(j, 1);
         }
       }
@@ -949,7 +964,7 @@ quit_state.prototype.display = function(me){
 
 
 /************************************************/
-/*             Upgrade State = 4                */
+/*             Upgrade State = 5                */
 /************************************************/
 
 var upgrade_state = function(){
@@ -963,6 +978,34 @@ var upgrade_state = function(){
 upgrade_state.prototype.update = function(me){};
 
 upgrade_state.prototype.checkState = function(me){
+    var upgrade = this.upgradeMenu.mouseIsOn();
+
+    if(upgrade === "acceleration"){
+      me.player.accIncr += 0.25;
+      me.currState = 1;
+      return;
+    }
+    if(upgrade === "armor"){
+      me.player.armor -= 0.1;
+      me.currState = 1;
+      return;
+    }
+    if(upgrade === "damage"){
+      me.player.weaponDamage += 0.5;
+      me.currState = 1;
+      return;
+    }
+    if(upgrade === "health"){
+      me.player.maxHealth += 5;
+      me.currState = 1;
+      return;
+    }
+    if(upgrade === "reload"){
+      me.player.reloadSpeed -= 3;
+      me.currState = 1;
+      return;
+    }
+
     me.currState = this.navMenu.mouseIsOn(5);
 };
 
