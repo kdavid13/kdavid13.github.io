@@ -316,9 +316,10 @@ mainMenu_state.prototype.display = function(me){
 /*              Projectile Object               */
 /************************************************/
 
-var projectileObj = function(x, y, type, target){
+var projectileObj = function(x, y, type, damage, target){
   this.pos = new PVector(x, y);
   this.type = type;
+  this.damage = damage;
   switch(this.type){
     case "friendly":
       this.speed = new PVector(0, -2);
@@ -425,7 +426,7 @@ var collisionObj = function(x, y, width, height){
     this.x = x;
     this.y = y;
     this.rx = width / 2;
-    this.ry = width / 2;
+    this.ry = height / 2;
 };
 collisionObj.prototype.update = function(velocity){
   this.x += velocity.x;
@@ -441,17 +442,23 @@ var spaceshipObj = function(x, y, type) {
     this.acc = new PVector(0, 0);
 
     this.mass = 5;
-    this.width = 35;
-    this.height = 45;
-    this.collisionDetectors = [new collisionObj(this.pos.x, this.pos.y, this.width, this.height)];
+
+    this.collisionDetectors = [ /* TODO: THIS NEEDS TO BE UPDATED WHEN CHARACTERS ARE DONE */ ];
 
     this.type = type;
-    this.speed = 1;
-    this.armor = 1;
-    this.weapon = 1;
-    this.health = 10;
 
+    /* Upgradables */
+    this.accIncr = 0.5;     // This is how quickly the ship accelerates
+    this.armor = 1;         // This is what incoming damage is multiplied by before being subtracted from player health
+    this.weaponDamage = 1;  // This is how much damage the player does to enemies
+    this.maxHealth = 10;    // This is how much health the player starts with each level
+    this.reloadSpeed = 15;  // This is how many frames the player has to wait to shoot another shot
+
+    // Variable to keep track of reloading
     this.reloadTimer = 0;
+
+    // Variable to keep track of health
+    this.health = this.maxHealth;
 };
 
 spaceshipObj.prototype.applyForce = function(force) {
@@ -466,22 +473,22 @@ spaceshipObj.prototype.update = function() {
     }
 
     // Make it so the ship will come to a stop if no keys are being pressed
-    var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
+    var spaceFriction = PVector.mult(this.vel, (this.accIncr / 8) * -1);
     this.applyForce(spaceFriction);
 
     if (this.health !== 0) {
       // If W, A, S, or D is being pressed, move the ship accordingly
       if(keysDown[wKey]){
-        this.applyForce(new PVector(0, -this.speed));
+        this.applyForce(new PVector(0, -this.accIncr));
       }
       if(keysDown[aKey]){
-        this.applyForce(new PVector(-this.speed, 0));
+        this.applyForce(new PVector(-this.accIncr, 0));
       }
       if(keysDown[dKey]){
-        this.applyForce(new PVector(this.speed, 0));
+        this.applyForce(new PVector(this.accIncr, 0));
       }
       if(keysDown[sKey]){
-        this.applyForce(new PVector(0, this.speed));
+        this.applyForce(new PVector(0, this.accIncr));
       }
     }
     // Add the current acceleration to the velocity
@@ -502,11 +509,21 @@ spaceshipObj.prototype.update = function() {
     // Add the current velocity to the position
     this.pos.add(this.vel);
 
+    // Update the collisionDetectors
+    for(var i = 0; i < this.collisionDetectors.length; i++){
+      this.collisionDetectors[i].update(this.vel);
+    }
+
     // Reset the current acceleration
     this.acc.set(0, 0);
 };
 
 spaceshipObj.prototype.draw = function() {
+    for(var i = 0; i < this.collisionDetectors.length; i++){
+      fill(0, 255, 0);
+      ellipse(this.collisionDetectors[i].x, this.collisionDetectors[i].y, this.collisionDetectors[i].rx * 2, this.collisionDetectors[i].ry * 2);
+    }
+
     pushMatrix();
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
@@ -576,12 +593,13 @@ var alienObj = function(x, y, type) {
 
     this.width = 60;
     this.height = 95;
-    this.collisionDetectors = [new collisionObj(this.pos.x, this.pos.y, this.width, this.height)];
+    this.collisionDetectors = [ new collisionObj(this.pos.x, this.pos.y, this.width, this.height)];
 
     this.speed = new PVector(1, 0);
     this.armor = 1;
     this.weapon = 1;
     this.health = 10;
+    this.weaponDamage = 1;
 
     this.reloadTimer = floor(random(90, 150));
 };
@@ -775,6 +793,7 @@ play_state.prototype.update = function(me){
         this.projectiles.splice(0, this.projectiles.length);
         me.player.pos.set(200, 350);
         me.player.vel.set(0, 0);
+        me.player.health = me.player.maxHealth;
 
         this.initialized = true;
     }
@@ -785,8 +804,8 @@ play_state.prototype.update = function(me){
 
   // Figure out if player is firing, and fire when they're weapon is reloaded
   if(keysDown[spaceKey] && me.player.reloadTimer === 0){
-    this.projectiles.push(new projectileObj(me.player.pos.x, me.player.pos.y, "friendly"));
-    me.player.reloadTimer = 15;
+    this.projectiles.push(new projectileObj(me.player.pos.x, me.player.pos.y, "friendly", me.player.weaponDamage));
+    me.player.reloadTimer = me.player.reloadSpeed;
   }
 
   // Update each projectile and remove it from the game if it's off the map
@@ -811,7 +830,7 @@ play_state.prototype.update = function(me){
 
     // If an enemy is reloaded, they should fire their weapon
     if(this.enemies[i].reloadTimer === 0){
-      this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", me.player.pos));
+      this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", this.enemies[i].weaponDamage, me.player.pos));
       this.enemies[i].reloadTimer = floor(random(90, 150));
     }
 
