@@ -839,6 +839,8 @@ play_state.prototype.update = function(me){
         me.player.health = me.player.maxHealth;
         me.player.pos.set(200, 350);
         me.player.vel.set(0, 0);
+        me.player.collisionDetector.x = 200;
+        me.player.collisionDetector.y = 350;
 
         this.initialized = true;
     }
