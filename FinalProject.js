@@ -435,6 +435,8 @@ var spaceshipObj = function(x, y, type) {
     this.weapon = 1;
     this.health = 10;
 
+    this.dead = false;
+
     this.reloadTimer = 0;
 };
 
@@ -491,6 +493,7 @@ spaceshipObj.prototype.update = function() {
 };
 
 spaceshipObj.prototype.draw = function() {
+  if(this.dead === false){
     pushMatrix();
     translate(this.pos.x, this.pos.y);
     rotate(this.angle);
@@ -543,6 +546,7 @@ spaceshipObj.prototype.draw = function() {
         arc(0, -14, 9, 10, 0 * toRads, 180 * toRads);
     }
     popMatrix();
+  }
 };
 
 spaceshipObj.prototype.display = function() {
@@ -828,8 +832,11 @@ play_state.prototype.checkState = function(me){
         }
     }
   }
-  if(this.player.health === 0){
+  if(this.player.health === 0 && this.player.dead === false){
     this.explosions.push(new explosionObj(this.player.pos.x, this.player.pos.y));
+    this.player.dead = true;
+  }
+  if(this.player.dead === true){
     this.endTimer--;
     if(this.endTimer <= 5) {
         // Player has lost
