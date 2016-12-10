@@ -352,7 +352,71 @@ projectileObj.prototype.display = function(){
   popMatrix();
 };
 
+/************************************************/
+/**             Particle object                **/
+/************************************************/
 
+var particleObj = function(x, y) {
+    this.position = new PVector(x, y);
+    this.direction = new PVector(random(-5, 5), random(-5, 5));
+    this.direction.normalize();
+    this.direction.mult(random(0.1, 0.9));
+    this.explodeDist = random(2, 15);
+    this.size = random(0.5, 3.5);
+    this.c1 = random(150, 255);
+    this.c2 = random(0, 100);
+    this.c3 = random(0, 40);
+    this.timer = 250;
+    this.state = "explode";
+}; 
+particleObj.prototype.update = function() {
+    this.position.add(this.direction);
+    this.explodeDist--;
+    if (this.timer <= 20) {
+        this.state = "inactive";
+    }
+    this.timer -= 2;
+};
+
+particleObj.prototype.display = function() {
+    pushMatrix();
+    fill(this.c1, this.c2, this.c3, this.timer);
+    noStroke();
+    ellipse(this.position.x, this.position.y, this.size, this.size);
+    popMatrix();
+};
+
+/************************************************/
+/*              Explosion object                */
+/************************************************/
+var explosionObj = function(x, y){
+    this.position = new PVector(x, y);
+    this.state = "active";
+    this.particles = [];
+    for (var i = 0; i < 200; i++) {
+        this.particles.push(new particleObj(this.position.x, this.position.y));   
+    }  
+};
+explosionObj.prototype.update = function() {
+    for (var i = 0; i < this.particles.length; i++){
+        this.particles[i].update();
+        
+        if (this.particles[i].state === "inactive"){
+            this.particles.splice(i, 1);
+        }
+    }
+    if (this.particles.length <= 3){
+        
+        this.state = "inactive";
+    }
+    
+};
+explosionObj.prototype.display = function() {
+    for (var i = 0; i < this.particles.length; i++){
+        this.particles[i].display();
+    }
+};                                                                       
+                                                                       
 /************************************************/
 /*               Spaceship Object               */
 /************************************************/
@@ -404,21 +468,22 @@ spaceshipObj.prototype.update = function() {
     // Make it so the ship will come to a stop if no keys are being pressed
     var spaceFriction = PVector.mult(this.vel, (this.speed / 8) * -1);
     this.applyForce(spaceFriction);
-
-    // If W, A, S, or D is being pressed, move the ship accordingly
-    if(keysDown[wKey]){
-      this.applyForce(new PVector(0, -this.speed));
+    
+    if (this.health !== 0) {
+      // If W, A, S, or D is being pressed, move the ship accordingly
+      if(keysDown[wKey]){
+        this.applyForce(new PVector(0, -this.speed));
+      }
+      if(keysDown[aKey]){
+        this.applyForce(new PVector(-this.speed, 0));
+      }
+      if(keysDown[dKey]){
+        this.applyForce(new PVector(this.speed, 0));
+      }
+      if(keysDown[sKey]){
+        this.applyForce(new PVector(0, this.speed));
+      }
     }
-    if(keysDown[aKey]){
-      this.applyForce(new PVector(-this.speed, 0));
-    }
-    if(keysDown[dKey]){
-      this.applyForce(new PVector(this.speed, 0));
-    }
-    if(keysDown[sKey]){
-      this.applyForce(new PVector(0, this.speed));
-    }
-
     // Add the current acceleration to the velocity
     this.vel.add(this.acc);
 
@@ -504,8 +569,6 @@ spaceshipObj.prototype.display = function() {
 /************************************************/
 /*               Alien Object                   */
 /************************************************/
-
-
 var alienObj = function(x, y, type) {
     this.pos = new PVector(x, y);
     this.origin = new PVector(x, y);
@@ -674,6 +737,8 @@ var play_state = function(){
   this.bg = new backgroundObj("game");
   this.projectiles = [];
   this.enemies = [];
+  this.explosions = [];
+  this.endTimer = 100;
 
   this.level = 1;
   this.initialized = false;
@@ -762,30 +827,49 @@ play_state.prototype.update = function(me){
 
     // If enemy is dead, remove him from game
     if(this.enemies[i].health <= 0){
+      this.explosions.push(new explosionObj(this.enemies[i].pos.x, this.enemies[i].pos.y));
       this.enemies.splice(i, 1);
     }
   }
-
+    
   this.checkState(me);
 };
 
 play_state.prototype.checkState = function(me){
   if(this.enemies.length === 0){
-    // Player needs to go on to next level, but upgrade first
-    this.level++;
-    if(this.level > 3){
-        // Player has won
-        me.winLoss = "won!";
-        me.currState = 4;
-    } else {
-        this.initialized = false;
-        me.currState = 5;
+    this.endTimer--;
+    if (this.endTimer <= 5) { //Wait for a second until explosion completes
+        // Player needs to go on to next level, but upgrade first
+        this.level++;
+        this.explosions[0].state = "inactive"; //Prevent explosion from showing up in next level
+        this.endTimer = 100; //Reset end timer so it works every level
+        if(this.level > 3){
+            // Player has won
+            me.winLoss = "won!";
+            me.currState = 4;
+        } else {
+            this.initialized = false;
+            me.currState = 5;
+        }
     }
   }
+<<<<<<< HEAD
   if(me.player.health === 0){
     // Player has lost
     me.winLoss = "lost!";
     me.currState = 4;
+=======
+  if(this.player.health === 0){
+    this.explosions.push(new explosionObj(this.player.pos.x, this.player.pos.y));
+    this.endTimer--;
+    if(this.endTimer <= 5) {
+        // Player has lost
+        this.endTimer = 100;
+        this.explosions[0].state = "inactive";
+        me.winLoss = "lost!";
+        me.currState = 4;
+    }
+>>>>>>> origin/master
   }
 };
 
@@ -797,6 +881,14 @@ play_state.prototype.display = function(me){
   }
   for(var i = 0; i < this.enemies.length; i++){
     this.enemies[i].display();
+  }
+  for (var i = 0; i < this.explosions.length; i++) {
+    if (this.explosions[i].state === "inactive" && this.explosions.length !== 1) {
+      this.explosions.splice(i, 1);
+    } else {
+      this.explosions[i].update();
+      this.explosions[i].display();
+    }
   }
 };
 
