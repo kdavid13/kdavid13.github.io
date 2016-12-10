@@ -571,11 +571,13 @@ spaceshipObj.prototype.display = function() {
 /************************************************/
 /*               Alien Object                   */
 /************************************************/
-var alienObj = function(x, y, type) {
+var alienObj = function(x, y, type, difficulty) {
     this.pos = new PVector(x, y);
     this.origin = new PVector(x, y);
     this.type = type;
-
+    this.difficulty = difficulty;
+    this.initialized = false;
+    
     this.width = 40;
     this.height = 40;
 
@@ -583,18 +585,48 @@ var alienObj = function(x, y, type) {
     this.armor = 1;
     this.weapon = 1;
     this.health = 10;
+    this.range = 20;
 
-    this.reloadTimer = floor(random(90, 150));
+    this.reloadRangeLow = 0;
+    this.reloadRangeHigh = 50;
+    this.reloadTimer = floor(random(this.reloadRangeLow, this.reloadRangeHigh));
 };
 
 alienObj.prototype.update = function() {
+    if (!this.initialized) {
+    switch(this.difficulty) {
+        case "easy":
+            this.speed = 1;
+            this.health = 10;
+            this.reloadRangeLow = 90;
+            this.reloadRangeHigh = 150;
+            this.range = 50;
+            break;
+        case "medium":
+            this.speed = 2;
+            this.health = 15;
+            this.reloadRangeLow = 50;
+            this.reloadRangeHigh = 90;
+            this.range = 100;
+            break;
+        case "hard":
+            this.speed = 3;
+            this.health = 20;
+            this.reloadRangeLow = 25;
+            this.reloadRangeHigh = 40;
+            this.range = 150;
+            break;
+    }
+    this.initialized = true;
+    }  
+    
   // Reload the ship's guns, if necessary
     if(this.reloadTimer > 0){
       this.reloadTimer--;
     }
 
     this.pos.x += this.speed;
-    if(abs(this.pos.x - this.origin.x) > 20){
+    if(abs(this.pos.x - this.origin.x) > this.range){
       this.speed *= -1;
     }
 };
@@ -750,17 +782,17 @@ play_state.prototype.update = function(me){
     if(this.initialized === false){
         switch(this.level){
             case 1:
-                this.enemies.push(new alienObj(268, 50, 1));
+                this.enemies.push(new alienObj(268, 50, 1, me.difficulty));
                 break;
             case 2:
                 for(var i = 0; i<3; i++){
-                  this.enemies.push(new alienObj(134 + i*67, 50, 1));
+                  this.enemies.push(new alienObj(134 + i*67, 50, 1, me.difficulty));
                 }
                 me.player.type = 2;
                 break;
             case 3:
                 for(var i = 0; i<5; i++){
-                  this.enemies.push(new alienObj(67 + i*67, 50, 1));
+                  this.enemies.push(new alienObj(67 + i*67, 50, 1, me.difficulty));
                 }
                 me.player.type = 3;
                 break;
@@ -806,7 +838,7 @@ play_state.prototype.update = function(me){
     // If an enemy is reloaded, they should fire their weapon
     if(this.enemies[i].reloadTimer === 0){
       this.projectiles.push(new projectileObj(this.enemies[i].pos.x, this.enemies[i].pos.y, "enemy", me.player.pos));
-      this.enemies[i].reloadTimer = floor(random(90, 150));
+      this.enemies[i].reloadTimer = floor(random(this.enemies[i].reloadRangeLow, this.enemies[i].reloadRangeHigh));
     }
 
     for(var j = 0; j < this.projectiles.length; j++){
@@ -973,7 +1005,7 @@ var upgrade_state = function(){
     this.navMenu = new navMenuObj();
 
     // upgrade status of ship?
-}
+};
 
 upgrade_state.prototype.update = function(me){};
 
