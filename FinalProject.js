@@ -427,13 +427,38 @@ explosionObj.prototype.display = function() {
     }
 };
 
+
+/************************************************/
+/*               Collision Object               */
+/************************************************/
+
+
+var collisionObj = function(x, y, width, height){
+    this.x = x;
+    this.y = y;
+    this.rx = width / 2;
+    this.ry = height / 2;
+};
+collisionObj.prototype.update = function(velocity){
+  this.x += velocity.x;
+  this.y += velocity.y;
+};
+collisionObj.prototype.isCollision = function(pos){
+  return sq(this.x - pos.x) / sq(this.rx) + sq(this.y - pos.y) / sq(this.ry) <= 1;
+};
+
+
 /************************************************/
 /*               Spaceship Object               */
 /************************************************/
+
+
 var spaceshipObj = function(x, y, type) {
     this.pos = new PVector(x, y);
     this.vel = new PVector(0, 0);
     this.acc = new PVector(0, 0);
+
+    this.collisionDetector = new collisionObj(this.pos.x, this.pos.y, 17, 55);
 
     this.mass = 5;
     this.width = 35;
@@ -487,6 +512,8 @@ spaceshipObj.prototype.update = function() {
     }
     // Add the current acceleration to the velocity
     this.vel.add(this.acc);
+
+    this.collisionDetector.update(this.vel);
 
     // Keep the ship within the bounds of the canvas
     if (this.pos.x < (this.width / 2) && this.vel.x < 0){
@@ -579,6 +606,8 @@ var alienObj = function(x, y, type) {
     this.width = 40;
     this.height = 40;
 
+    this.collisionDetector = new collisionObj(this.pos.x, this.pos.y, 60, 95);
+
     this.speed = 1;
     this.armor = 1;
     this.weapon = 1;
@@ -594,6 +623,10 @@ alienObj.prototype.update = function() {
     }
 
     this.pos.x += this.speed;
+
+    var placeHolder = new PVector(this.speed, 0);
+    this.collisionDetector.update(placeHolder);
+
     if(abs(this.pos.x - this.origin.x) > 20){
       this.speed *= -1;
     }
@@ -738,11 +771,16 @@ var play_state = function(){
   this.initialized = false;
 };
 
-play_state.prototype.checkCollision = function(obj, x, y){
-  if(x < obj.pos.x + (obj.width / 2) && x > obj.pos.x - (obj.width / 2) &&
-     y < obj.pos.y + (obj.height / 2) && y > obj.pos.y - (obj.height / 2)){
-       return true;
-     }
+play_state.prototype.checkCollision = function(obj, pos){
+  // if(x < obj.pos.x + (obj.width / 2) && x > obj.pos.x - (obj.width / 2) &&
+  //    y < obj.pos.y + (obj.height / 2) && y > obj.pos.y - (obj.height / 2)){
+  //      return true;
+  //    }
+  // return false;
+  if(obj.collisionDetector.isCollision(pos) === true){
+      return true;
+  }
+
   return false;
 };
 
@@ -792,7 +830,7 @@ play_state.prototype.update = function(me){
       continue;
     }
     if(this.projectiles[i].type === "enemy"){
-      if(this.checkCollision(me.player, this.projectiles[i].pos.x, this.projectiles[i].pos.y)){
+      if(this.checkCollision(me.player, this.projectiles[i].pos)){
         me.player.health -= 1 * me.player.armor;
         this.projectiles.splice(i, 1);
       }
@@ -811,7 +849,7 @@ play_state.prototype.update = function(me){
 
     for(var j = 0; j < this.projectiles.length; j++){
       if(this.projectiles[j].type === "friendly"){
-        if(this.checkCollision(this.enemies[i], this.projectiles[j].pos.x, this.projectiles[j].pos.y)){
+        if(this.checkCollision(this.enemies[i], this.projectiles[j].pos)){
           // There was a collision; decrease this enemy's health and remove the projectile from the game
           this.enemies[i].health -= me.player.weaponDamage;
           this.projectiles.splice(j, 1);
